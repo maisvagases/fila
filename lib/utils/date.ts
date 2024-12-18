@@ -1,5 +1,3 @@
-import { format, addHours, differenceInMinutes } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 
 export function parseMongoDate(data: any): Date {
   if (!data) return new Date();
@@ -27,28 +25,16 @@ export function parseMongoDate(data: any): Date {
   return new Date();
 }
 
-export function formatToGMT3(date: string | Date): string {
-  try {
-    const dateObj = date instanceof Date ? date : parseMongoDate(date);
-    if (isNaN(dateObj.getTime())) {
-      console.warn('Invalid date:', date);
-      return 'Invalid date';
-    }
-    const gmt3Date = addHours(dateObj, -3); // Convert to GMT-3
-    return format(gmt3Date, "dd/MM/yyyy HH:mm", { locale: ptBR });
-  } catch (error) {
-    console.error('Error formatting date:', error);
-    return 'Invalid date';
-  }
+export function formatToGMT3(date: Date): string {
+  return date.toLocaleString('pt-BR', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 }
 
-export function calculateDurationInMinutes(startTime: string | Date, finishTime: string | Date): number {
-  try {
-    const start = parseMongoDate(startTime);
-    const finish = parseMongoDate(finishTime);
-    return differenceInMinutes(finish, start);
-  } catch (error) {
-    console.error('Error calculating duration:', error);
-    return 0;
-  }
+export function calculateDurationInMinutes(startTime: Date, endTime: Date): number {
+  return Math.round((endTime.getTime() - startTime.getTime()) / (1000 * 60));
 }

@@ -3,15 +3,20 @@ import { Button } from '@/components/ui/button';
 import { getPaginatedJobPosts } from '@/lib/api/job-posts';
 import type { JobPostDTO } from '@/lib/api/types';
 import { AlertCircle, History, RefreshCw } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 interface PaginatedData {
   posts: JobPostDTO[];
   total: number;
 }
 
+export const revalidate = 60; // 60 segundos = 1 minuto
+
 export default async function Home() {
   let error = null;
   let initialData: PaginatedData = { posts: [], total: 0 };
+  const now = new Date();
 
   try {
     initialData = await getPaginatedJobPosts(1, 10);
@@ -27,9 +32,14 @@ export default async function Home() {
           <History className="h-8 w-8 text-primary" />
           <div>
             <h1 className="text-3xl font-bold">Histórico de postagens</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Total de registros: {initialData.total}
-            </p>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+              <p>Total de registros: {initialData.total}</p>
+              <span>•</span>
+              <p>Última atualização: {formatDistanceToNow(now, {
+                addSuffix: true,
+                locale: ptBR
+              })}</p>
+            </div>
           </div>
         </div>
         <form action={async () => {

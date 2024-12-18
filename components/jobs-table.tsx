@@ -87,10 +87,10 @@ export function JobsTable({ initialPosts, totalPosts }: JobsTableProps) {
               </TableHead>
               <TableHead key="title">Título</TableHead>
               <TableHead key="startTime" className="w-[180px]">
-                Início (GMT-3)
+                Início
               </TableHead>
               <TableHead key="endTime" className="w-[180px]">
-                Fim (GMT-3)
+                Fim
               </TableHead>
               <TableHead key="duration" className="w-[100px] text-right">
                 Duração
@@ -121,18 +121,15 @@ export function JobsTable({ initialPosts, totalPosts }: JobsTableProps) {
                   )}
                 </TableCell>
                 <TableCell className="font-medium">
-                  {post.error ? (
-                    <div className="flex flex-col">
-                      <span>{post.title}</span>
-                      {post.error !== 'No error details' && (
-                        <span className="text-xs text-muted-foreground">{post.error}</span>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="flex flex-col">
-                      <span>{post.title}</span>
-                    </div>
-                  )}
+                  <div className="flex flex-col">
+                    <span>{post.title}</span>
+                    <span className="text-xs text-muted-foreground truncate max-w-[300px]">
+                      {post.url}
+                    </span>
+                    {post.error !== 'No error details' && (
+                      <span className="text-xs text-muted-foreground">{post.error}</span>
+                    )}
+                  </div>
                 </TableCell>
                 <TableCell>
                   {post.startTime ? formatToGMT3(post.startTime) : "Invalid date"}
