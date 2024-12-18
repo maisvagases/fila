@@ -16,6 +16,7 @@ import { ExternalLink, Newspaper, RefreshCw } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { formatDateTime } from '@/lib/api/date-utils';
+import { SearchFilter, SearchFilters } from './search-filter';
 
 interface JobsTableProps {
   initialPosts: JobPostDTO[];
@@ -25,6 +26,12 @@ interface JobsTableProps {
 export function JobsTable({ initialPosts, totalPosts }: JobsTableProps) {
   const [posts, setPosts] = useState<JobPostDTO[]>(initialPosts);
   const [isLoading, setIsLoading] = useState(false);
+  const [filters, setFilters] = useState<SearchFilters>({
+    title: '',
+    url: '',
+    startDate: '',
+    endDate: ''
+  });
 
   useEffect(() => {
     const fetchAllPosts = async () => {
@@ -53,8 +60,21 @@ export function JobsTable({ initialPosts, totalPosts }: JobsTableProps) {
     fetchAllPosts();
   }, []);
 
+  const filteredPosts = posts.filter(post => {
+    const matchesTitle = post.title.toLowerCase().includes(filters.title.toLowerCase());
+    const matchesUrl = post.url.toLowerCase().includes(filters.url.toLowerCase());
+    const matchesStartDate = filters.startDate ? new Date(post.startTime) >= new Date(filters.startDate) : true;
+    const matchesEndDate = filters.endDate ? new Date(post.finishedTime) <= new Date(filters.endDate) : true;
+
+    return matchesTitle && matchesUrl && matchesStartDate && matchesEndDate;
+  });
+
   return (
     <div>
+      <SearchFilter onFilterChange={setFilters} />
+      <div className="text-sm text-muted-foreground mb-4">
+        {filteredPosts.length} resultado(s) encontrado(s)
+      </div>
       <div className="rounded-md border relative">
         {isLoading && (
           <div className="absolute inset-0 bg-background/50 flex items-center justify-center z-50">
@@ -86,7 +106,7 @@ export function JobsTable({ initialPosts, totalPosts }: JobsTableProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {posts.map((post) => {
+            {filteredPosts.map((post) => {
               return (
                 <TableRow key={post.id}>
                   <TableCell>
@@ -157,6 +177,8 @@ export function JobsTable({ initialPosts, totalPosts }: JobsTableProps) {
           Total de registros: {totalPosts}
         </div>
       </div>
+
+
     </div>
   );
 }
