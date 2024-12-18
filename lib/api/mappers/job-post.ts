@@ -1,5 +1,5 @@
 import type { JobPost } from '../../types/job-post';
-import { fetchWordPressPost } from '@/lib/api/services/wordpress';
+import { fetchWordPressPost } from '@/lib/services/wordpress';
 import { parseMongoDate } from '@/lib/utils/date';
 import type { JobPostDTO } from '@/lib/api/types';
 
