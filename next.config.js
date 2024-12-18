@@ -1,6 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export',
   eslint: {
     ignoreDuringBuilds: true,
   },
@@ -8,9 +7,9 @@ const nextConfig = {
     unoptimized: true,
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: 'maisvagases.com.br',
-        pathname: '/**',
+        protocol: "https",
+        hostname: "maisvagases.com.br",
+        pathname: "/**",
       },
     ],
   },

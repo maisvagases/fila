@@ -48,45 +48,40 @@ export async function fetchWordPressPost(url: string): Promise<WordPressPostData
     if (!postId) {
       console.warn('Invalid URL: Could not extract post ID');
       return {
-        title: `Post ${postId || 'Unknown'}`, // Fallback para título
+        title: `Post ${postId || 'Unknown'}`,
         error: 'Could not extract post ID from URL'
       };
     }
 
     // Try job listing endpoint first
-    let response = await fetchFromEndpoint(ENDPOINTS.JOB_LISTING(postId));
+    let response = await fetchFromEndpoint(`${ENDPOINTS.JOB_LISTING(postId)}?_fields=title,featured_media,type`);
     console.log(`Job Listing Endpoint Response Status: ${response.status}`);
     
     // If not found, try regular post endpoint
     if (response.status === 404) {
-      response = await fetchFromEndpoint(ENDPOINTS.POST(postId));
+      response = await fetchFromEndpoint(`${ENDPOINTS.POST(postId)}?_fields=title,featured_media,type`);
       console.log(`Post Endpoint Response Status: ${response.status}`);
     }
 
     if (!response.ok) {
       console.warn(`Failed to fetch post: ${response.statusText}`);
       return {
-        title: `Post ${postId}`, // Fallback para título
+        title: `Post ${postId}`,
         error: `Failed to fetch post: ${response.statusText}`,
         type: undefined
       };
     }
 
     const data: WordPressPost = await response.json();
-    console.log('Fetched Post Data:', JSON.stringify(data, null, 2));
 
     let media = null;
-    
     if (data.featured_media) {
       media = await fetchMedia(data.featured_media);
-      console.log('Media:', media);
     }
     
     const title = data.title?.rendered 
       ? sanitizeWordPressContent(data.title.rendered) 
-      : `Post ${postId}`; // Fallback para título usando o ID do post
-    
-    console.log(`Final Title: ${title}`);
+      : `Post ${postId}`;
 
     return {
       title,

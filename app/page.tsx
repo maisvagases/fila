@@ -34,11 +34,6 @@ export default async function Home() {
             <h1 className="text-3xl font-bold">Histórico de postagens</h1>
             <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
               <p>Total de registros: {initialData.total}</p>
-              <span>•</span>
-              <p>Última atualização: {formatDistanceToNow(now, {
-                addSuffix: true,
-                locale: ptBR
-              })}</p>
             </div>
           </div>
         </div>

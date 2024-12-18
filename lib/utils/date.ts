@@ -1,3 +1,5 @@
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 export function parseMongoDate(data: any): Date {
   if (!data) return new Date();
@@ -5,17 +7,17 @@ export function parseMongoDate(data: any): Date {
   try {
     // Handle MongoDB date format
     if (data.$date) {
-    return new Date(data.$date);
+      return new Date(data.$date);
     }
   
     // Handle string input
     if (typeof data === 'string') {
-    return new Date(data);
+      return new Date(data);
     }
   
     // If it's already a Date object
     if (data instanceof Date) {
-    return data;
+      return data;
     }
   } catch (error) {
     console.error('Error parsing date:', error);
@@ -26,15 +28,18 @@ export function parseMongoDate(data: any): Date {
 }
 
 export function formatToGMT3(date: Date): string {
-  return date.toLocaleString('pt-BR', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  return format(date, "dd/MM/yyyy 'às' HH:mm:ss", { locale: ptBR });
 }
 
-export function calculateDurationInMinutes(startTime: Date, endTime: Date): number {
-  return Math.round((endTime.getTime() - startTime.getTime()) / (1000 * 60));
+export function calculateDurationInMinutes(startTime: string | Date, endTime: string | Date): number {
+  const start = typeof startTime === 'string' ? new Date(startTime) : startTime;
+  const end = typeof endTime === 'string' ? new Date(endTime) : endTime;
+
+  // Verifica se as datas são válidas
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+    console.error('Invalid date provided:', { startTime, endTime });
+    return 0; // Retorna 0 se as datas não forem válidas
+  }
+
+  return Math.round((end.getTime() - start.getTime()) / (1000 * 60));
 }
