@@ -23,9 +23,9 @@ export function JobCard({ post }: JobCardProps) {
             )}
             {post.title}
           </span>
-          <Link 
-            href={post.url} 
-            target="_blank" 
+          <Link
+            href={post.url}
+            target="_blank"
             className={cn(
               "text-muted-foreground hover:text-primary",
               post.status === 'error' && "pointer-events-none opacity-50"
@@ -48,10 +48,10 @@ export function JobCard({ post }: JobCardProps) {
                 </Link>
               </CardDescription>
               <CardDescription>
-                <span className="font-medium">Started:</span> {formatDateTime(post.startTime)}
+                <span className="font-medium">Started:</span> {formatDateTime(post.startTime.toString())}
               </CardDescription>
               <CardDescription>
-                <span className="font-medium">Finished:</span> {formatDateTime(post.finishedTime)}
+                <span className="font-medium">Finished:</span> {formatDateTime(post.finishedTime.toString())}
               </CardDescription>
               <CardDescription>
                 <span className="font-medium">Duration:</span>{' '}
