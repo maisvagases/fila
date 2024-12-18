@@ -15,6 +15,7 @@ import { calculateDurationInMinutes, formatToGMT3 } from "@/lib/utils/date";
 import { ExternalLink, Newspaper, RefreshCw } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { formatDateTime } from '@/lib/api/date-utils';
 
 interface JobsTableProps {
   initialPosts: JobPostDTO[];
@@ -86,14 +87,6 @@ export function JobsTable({ initialPosts, totalPosts }: JobsTableProps) {
           </TableHeader>
           <TableBody>
             {posts.map((post) => {
-              const startTimeFormatted = post.startTime && post.startTime instanceof Date
-                ? formatToGMT3(post.startTime)
-                : "Data inválida";
-
-              const finishedTimeFormatted = post.finishedTime && post.finishedTime instanceof Date
-                ? formatToGMT3(post.finishedTime)
-                : "Data inválida";
-
               return (
                 <TableRow key={post.id}>
                   <TableCell>
@@ -122,10 +115,14 @@ export function JobsTable({ initialPosts, totalPosts }: JobsTableProps) {
                     </div>
                   </TableCell>
                   <TableCell>
-                    {startTimeFormatted}
+                    {post.startTime
+                      ? formatDateTime(post.startTime)
+                      : "Data inválida"}
                   </TableCell>
                   <TableCell>
-                    {finishedTimeFormatted}
+                    {post.finishedTime
+                      ? formatDateTime(post.finishedTime)
+                      : "Data inválida"}
                   </TableCell>
                   <TableCell className="text-right">
                     {post.startTime && post.finishedTime
