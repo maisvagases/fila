@@ -1,7 +1,6 @@
 import { format } from "date-fns";
 import { utcToZonedTime } from "date-fns-tz";
 import { fetchWordPressTitle } from '@/lib/wordpress';
-import { prisma } from '@/lib/prisma';
 import { API_CONFIG } from './config';
 
 export interface JobPost {
@@ -9,34 +8,40 @@ export interface JobPost {
   url: string;
   startTime: string;
   finishedTime: string;
-  title?: string;
+  title: string;
 }
 
-export async function fetchJobPosts(): Promise<JobPost[]> {
-  try {
-    const posts = await prisma.jobPost.findMany({
-      orderBy: {
-        startTime: 'desc'
-      },
-      take: 50 // Limit to most recent 50 posts
-    });
+const API_URL = 'https://maisvagases.com.br/wp-json/wp/v2/job-listings';
 
-    return await enrichPostsWithTitles(
-      posts.map(post => ({
-        _id: post.id,
-        url: post.url,
-        startTime: post.startTime.toISOString(),
-        finishedTime: post.finishedTime.toISOString(),
-        title: post.title
-      }))
-    );
+export async function getPaginatedJobPosts(page: number, pageSize: number) {
+  try {
+    const response = await fetch(`${API_URL}?page=${page}&per_page=${pageSize}`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    
+    // Adaptar os dados conforme necessário
+    const adaptedPosts = data.map((post: any) => ({
+      id: post.id,
+      title: post.title.rendered,
+      url: post.link,
+      startTime: post.date,
+      finishedTime: post.modified,
+      imageUrl: post.featured_media ? post._embedded['wp:featuredmedia'][0].source_url : null,
+      imageAlt: post._embedded['wp:featuredmedia'] ? post._embedded['wp:featuredmedia'][0].alt_text : null,
+      meta: {
+        _company_name: post.meta?._company_name,
+      },
+    }));
+
+    return {
+      posts: adaptedPosts,
+      total: parseInt(response.headers.get('X-WP-Total') || '0', 10),
+    };
   } catch (error) {
-    console.error('Failed to fetch job posts:', error);
-    throw new Error(
-      error instanceof Error
-        ? `Failed to fetch job posts: ${error.message}`
-        : 'Failed to fetch job posts'
-    );
+    console.error('Error fetching job posts:', error);
+    throw error;
   }
 }
 
@@ -55,7 +60,7 @@ async function enrichPostsWithTitles(posts: JobPost[]): Promise<JobPost[]> {
         const title = await fetchWordPressTitle(post.url);
         return {
           ...post,
-          title
+          title: title || 'Untitled Post'
         };
       } catch (error) {
         console.error(`Error fetching title for ${post?.url || 'unknown URL'}:`, error);
