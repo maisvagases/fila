@@ -32,9 +32,6 @@ export default async function Home() {
           <History className="h-8 w-8 text-primary" />
           <div>
             <h1 className="text-3xl font-bold">Histórico de postagens</h1>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-              <p>Total de registros: {initialData.total}</p>
-            </div>
           </div>
         </div>
         <form action={async () => {

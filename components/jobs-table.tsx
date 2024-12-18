@@ -171,14 +171,6 @@ export function JobsTable({ initialPosts, totalPosts }: JobsTableProps) {
           </TableBody>
         </Table>
       </div>
-
-      <div className="mt-4 flex items-center justify-between">
-        <div className="text-sm text-muted-foreground">
-          Total de registros: {totalPosts}
-        </div>
-      </div>
-
-
     </div>
   );
 }
