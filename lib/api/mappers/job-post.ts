@@ -1,7 +1,6 @@
-import type { JobPost } from '../../types/job-post';
-import { fetchWordPressPost } from '@/lib/services/wordpress';
-import { parseMongoDate } from '@/lib/utils/date';
 import type { JobPostDTO } from '@/lib/api/types';
+import { parseMongoDate } from '@/lib/utils/date';
+import type { JobPost } from '../../types/job-post';
 
 export async function mapAPIResponseToDTO(data: JobPost): Promise<JobPostDTO> {
   try {

@@ -25,19 +25,20 @@ export async function mapAPIResponseToDTO(data: any): Promise<JobPostDTO> {
     }
 
     return {
-      _id: id,
+      id: id,
       url: String(data.url),
       startTime: parseMongoDate(data.startTime || data.start_time),
       finishedTime: parseMongoDate(data.finishedTime),
       title: postData.title,
       imageUrl: postData.imageUrl,
       imageAlt: postData.imageAlt,
-      status: postData.title === 'Error loading post' ? 'error' : 'success'
+      status: postData.title === 'Error loading post' ? 'error' : 'success',
+      error: ''
     };
   } catch (error) {
     console.error('Error mapping job post:', error);
     return {
-      _id: data._id || 'error',
+      id: data.id || 'error',
       url: data.url || '#',
       startTime: new Date(),
       finishedTime: new Date(),
