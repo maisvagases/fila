@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import {
   Table,
@@ -8,12 +8,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatToGMT3, calculateDurationInMinutes } from "@/lib/utils/date";
-import { ExternalLink, AlertCircle, Newspaper } from "lucide-react";
+import type { JobPostDTO } from "@/lib/api/types";
+import { cn } from "@/lib/utils";
+import { calculateDurationInMinutes, formatToGMT3 } from "@/lib/utils/date";
+import { ExternalLink, Newspaper } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
-import type { JobPostDTO } from "@/lib/api/types";
 
 interface JobsTableProps {
   posts: JobPostDTO[];
@@ -25,32 +25,33 @@ export function JobsTable({ posts }: JobsTableProps) {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead key="status" className="w-[100px]">Status</TableHead>
-            <TableHead key="image" className="w-[120px]">Image</TableHead>
-            <TableHead key="title">Title</TableHead>
-            <TableHead key="startTime" className="w-[180px]">Start Time (GMT-3)</TableHead>
-            <TableHead key="endTime" className="w-[180px]">End Time (GMT-3)</TableHead>
-            <TableHead key="duration" className="w-[100px] text-right">Duration</TableHead>
-            <TableHead key="link" className="w-[70px]">Link</TableHead>
+            <TableHead key="image" className="w-[120px]">
+              Image
+            </TableHead>
+            <TableHead key="title">Título</TableHead>
+            <TableHead key="startTime" className="w-[180px]">
+              Início (GMT-3)
+            </TableHead>
+            <TableHead key="endTime" className="w-[180px]">
+              Fim (GMT-3)
+            </TableHead>
+            <TableHead key="duration" className="w-[100px] text-right">
+              Duração
+            </TableHead>
+            <TableHead key="link" className="w-[70px]">
+              Link
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {posts.map((post) => (
-            <TableRow key={post._id}>
-              <TableCell>
-                <div className="flex items-center gap-2">
-                  <Newspaper className="h-5 w-5 text-primary" />
-                  {post.status === 'error' && (
-                    <AlertCircle className="h-5 w-5 text-destructive" />
-                  )}
-                </div>
-              </TableCell>
+            <TableRow key={post.id}>
               <TableCell>
                 {post.imageUrl ? (
                   <div className="relative h-16 w-16 overflow-hidden rounded-md">
                     <Image
                       src={post.imageUrl}
-                      alt={post.imageAlt || 'Post featured image'}
+                      alt={post.imageAlt || "Post featured image"}
                       className="object-cover"
                       fill
                       sizes="64px"
@@ -67,25 +68,30 @@ export function JobsTable({ posts }: JobsTableProps) {
                   <span className="text-destructive">{post.error}</span>
                 ) : (
                   <div className="flex flex-col">
-                    <span>{post.title || 'Untitled Post'}</span>
+                    <span>{post.title || "Untitled Post"}</span>
                     {post.type && (
                       <span className="text-xs text-muted-foreground">
-                        {post.type === 'job-listing' ? 'Job Listing' : 'Post'}
+                        {post.type === "job-listing" ? "Job Listing" : "Post"}
                       </span>
                     )}
                   </div>
                 )}
               </TableCell>
               <TableCell>
-                {post.startTime ? formatToGMT3(post.startTime) : 'Invalid date'}
+                {post.startTime ? formatToGMT3(post.startTime) : "Invalid date"}
               </TableCell>
               <TableCell>
-                {post.finishedTime ? formatToGMT3(post.finishedTime) : 'Invalid date'}
+                {post.finishedTime
+                  ? formatToGMT3(post.finishedTime)
+                  : "Invalid date"}
               </TableCell>
               <TableCell className="text-right">
                 {post.startTime && post.finishedTime
-                  ? `${calculateDurationInMinutes(post.startTime, post.finishedTime)} min`
-                  : '-'}
+                  ? `${calculateDurationInMinutes(
+                      post.startTime,
+                      post.finishedTime
+                    )} min`
+                  : "-"}
               </TableCell>
               <TableCell>
                 <Link
@@ -94,7 +100,7 @@ export function JobsTable({ posts }: JobsTableProps) {
                   rel="noopener noreferrer"
                   className={cn(
                     "inline-flex items-center justify-center text-muted-foreground hover:text-primary",
-                    post.status === 'error' && "pointer-events-none opacity-50"
+                    post.status === "error" && "pointer-events-none opacity-50"
                   )}
                 >
                   <ExternalLink className="h-4 w-4" />

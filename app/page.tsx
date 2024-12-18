@@ -1,11 +1,12 @@
 import { JobsTable } from '@/components/jobs-table';
 import { getEnrichedJobPosts } from '@/lib/api/job-posts';
-import { Briefcase, RefreshCw, AlertCircle } from 'lucide-react';
+import { History, RefreshCw, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Suspense } from 'react';
+import type { JobPostDTO } from '@/lib/api/types';
 
 export default async function Home() {
-  let posts = [];
+  let posts: JobPostDTO[] = []; // Adicione a tipagem aqui
   let error = null;
 
   try {
@@ -19,8 +20,8 @@ export default async function Home() {
     <main className="container mx-auto py-8 px-4">
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-3">
-          <Briefcase className="h-8 w-8 text-primary" />
-          <h1 className="text-3xl font-bold">Job Posting Manager</h1>
+          <History className="h-8 w-8 text-primary" />
+          <h1 className="text-3xl font-bold">Histórico de postagens</h1>
         </div>
         <form action={async () => {
           'use server';
@@ -28,7 +29,7 @@ export default async function Home() {
         }}>
           <Button type="submit" variant="outline" size="sm" className="gap-2">
             <RefreshCw className="h-4 w-4" />
-            Refresh
+            Atualizar
           </Button>
         </form>
       </div>
