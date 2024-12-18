@@ -1,11 +1,13 @@
-import { fetchJobPosts } from './fetch-job-posts';
+import { fetchJobPosts as fetchJobPostsFromAPI } from './fetch-job-posts';
 import { fetchWordPressPost } from './services/wordpress';
 import type { JobPost, JobPostDTO } from '@/lib/types/job-post';
+
+export { fetchJobPostsFromAPI as fetchJobPosts };
 
 export async function getEnrichedJobPosts(): Promise<JobPostDTO[]> {
   try {
     console.log('Fetching raw posts...');
-    const posts = await fetchJobPosts();
+    const posts = await fetchJobPostsFromAPI();
     console.log(`Fetched ${posts.length} raw posts`);
 
     if (posts.length === 0) {

@@ -1,9 +1,9 @@
-import type { JobPostResponse } from '../types/job-post';
+import type { JobPost } from '../../types/job-post';
 import { fetchWordPressPost } from '@/lib/api/services/wordpress';
 import { parseMongoDate } from '@/lib/utils/date';
 import type { JobPostDTO } from '@/lib/api/types';
 
-export async function mapAPIResponseToDTO(data: JobPostResponse): Promise<JobPostDTO> {
+export async function mapAPIResponseToDTO(data: JobPost): Promise<JobPostDTO> {
   try {
     const id = data._id?.$oid;
     if (!id || !data.url) {
