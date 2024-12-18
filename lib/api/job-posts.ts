@@ -57,16 +57,18 @@ async function enrichPostsWithWordPressData(posts: JobPost[]): Promise<JobPostDT
 
 export async function getPaginatedJobPosts(page: number, pageSize: number) {
   try {
-    const posts = await getEnrichedJobPosts();
+    const allPosts = await getEnrichedJobPosts();
     const startIndex = (page - 1) * pageSize;
     const endIndex = startIndex + pageSize;
     
     return {
-      posts: posts.slice(startIndex, endIndex),
-      total: posts.length,
+      posts: allPosts.slice(startIndex, endIndex),
+      total: allPosts.length,
+      page,
+      pageSize
     };
   } catch (error) {
-    console.error('Error fetching paginated posts:', error);
+    console.error('Error in getPaginatedJobPosts:', error);
     throw error;
   }
 }

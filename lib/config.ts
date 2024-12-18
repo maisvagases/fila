@@ -6,7 +6,7 @@ export const API_CONFIG = {
   },
   TIME_ZONE: 'America/Sao_Paulo',
   REVALIDATION: {
-    posts: 60,
+    posts: 0,
     wordpress: 3600
   }
 } as const;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Table,
   TableBody,
@@ -27,12 +27,41 @@ interface JobsTableProps {
 
 export function JobsTable({ initialPosts, totalPosts }: JobsTableProps) {
   const [posts, setPosts] = useState<JobPostDTO[]>(initialPosts);
-  const [filters, setFilters] = useState<SearchFilters>({ query: '' });
+  const [filters, setFilters] = useState<SearchFilters>({
+    title: '',
+    url: '',
+    startDate: '',
+    endDate: ''
+  });
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [isLoading, setIsLoading] = useState(false);
 
   const totalPages = Math.ceil(totalPosts / pageSize);
+
+  const filteredPosts = useMemo(() => {
+    return posts.filter((post) => {
+      const matchTitle = !filters.title ||
+        post.title.toLowerCase().includes(filters.title.toLowerCase());
+
+      const matchUrl = !filters.url ||
+        post.url.toLowerCase().includes(filters.url.toLowerCase());
+
+      const postStartDate = post.startTime
+        ? formatToGMT3(post.startTime).split(' ')[0]
+        : '';
+      const matchStartDate = !filters.startDate ||
+        postStartDate.includes(filters.startDate);
+
+      const postEndDate = post.finishedTime
+        ? formatToGMT3(post.finishedTime).split(' ')[0]
+        : '';
+      const matchEndDate = !filters.endDate ||
+        postEndDate.includes(filters.endDate);
+
+      return matchTitle && matchUrl && matchStartDate && matchEndDate;
+    });
+  }, [posts, filters]);
 
   useEffect(() => {
     const fetchPageData = async () => {
@@ -41,18 +70,27 @@ export function JobsTable({ initialPosts, totalPosts }: JobsTableProps) {
         const response = await fetch(
           `/api/posts?page=${currentPage}&pageSize=${pageSize}`
         );
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
         const data = await response.json();
+        if (data.error) {
+          throw new Error(data.error);
+        }
+
         setPosts(data.posts);
       } catch (error) {
         console.error('Error fetching page data:', error);
+        // Opcional: adicionar um estado para mostrar erro ao usuário
       } finally {
         setIsLoading(false);
       }
     };
 
-    if (currentPage > 1) {
-      fetchPageData();
-    }
+    // Buscar dados para todas as páginas, não apenas após a primeira
+    fetchPageData();
   }, [currentPage, pageSize]);
 
   const handlePageChange = (page: number) => {
@@ -101,7 +139,7 @@ export function JobsTable({ initialPosts, totalPosts }: JobsTableProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {posts.map((post) => (
+            {filteredPosts.map((post) => (
               <TableRow key={post.id}>
                 <TableCell>
                   {post.imageUrl ? (
