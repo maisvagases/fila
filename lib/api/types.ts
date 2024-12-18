@@ -1,13 +1,13 @@
 export interface JobPostDTO {
-  _id: string;
+  id: string;
   url: string;
-  startTime: string | Date;
-  finishedTime: string | Date;
-  title?: string;
+  startTime: Date;
+  finishedTime: Date;
+  title: string;
   imageUrl?: string;
   imageAlt?: string;
-  status?: 'success' | 'error';
-  error?: string;
+  status: 'success' | 'error';
+  error: string; // Remover o opcional
 }
 
 export interface APIError {

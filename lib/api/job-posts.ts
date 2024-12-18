@@ -10,37 +10,63 @@ export async function getEnrichedJobPosts(): Promise<JobPostDTO[]> {
 async function enrichPostsWithWordPressData(posts: JobPost[]): Promise<JobPostDTO[]> {
   const enrichedPosts = await Promise.allSettled(
     posts.map(async post => {
+      console.log(`Processing post URL: ${post.url}`);
       try {
         const wpData = await fetchWordPressPost(post.url);
+        console.log('WP Data:', JSON.stringify(wpData, null, 2));
         
         return {
-          _id: post._id.$oid,
+          id: post._id.$oid,
           url: post.url,
           startTime: new Date(post.startTime.$date),
           finishedTime: new Date(post.finishedTime.$date),
-          title: wpData.title,
+          title: wpData.title || `Post ${post._id.$oid.slice(-6)}`, // Fallback para título
           imageUrl: wpData.imageUrl,
           imageAlt: wpData.imageAlt,
           status: wpData.error ? 'error' : 'success',
-          error: wpData.error
+          error: wpData.error || 'No error details', // Sempre uma string
+          type: wpData.type
         };
       } catch (error) {
         console.error(`Error enriching post ${post._id.$oid}:`, error);
         return {
-          _id: post._id.$oid,
+          id: post._id.$oid,
           url: post.url,
           startTime: new Date(post.startTime.$date),
           finishedTime: new Date(post.finishedTime.$date),
-          title: 'Error loading post',
+          title: `Post ${post._id.$oid.slice(-6)}`, // Fallback para título
           status: 'error',
-          error: error instanceof Error ? error.message : 'Unknown error'
+          error: error instanceof Error ? error.message : 'Unknown error', // Sempre uma string
+          type: undefined
         };
       }
     })
   );
 
   return enrichedPosts
-    .map(result => result.status === 'fulfilled' ? result.value : null)
-    .filter((post): post is JobPostDTO => post !== null)
+    .filter((result): result is PromiseFulfilledResult<JobPostDTO> => {
+      return result.status === 'fulfilled' && 
+             typeof result.value.id === 'string' &&
+             typeof result.value.title === 'string' &&
+             typeof result.value.status === 'string' &&
+             typeof result.value.error === 'string';
+    })
+    .map(result => result.value)
     .sort((a, b) => b.startTime.getTime() - a.startTime.getTime());
+}
+
+export async function getPaginatedJobPosts(page: number, pageSize: number) {
+  try {
+    const posts = await getEnrichedJobPosts();
+    const startIndex = (page - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    
+    return {
+      posts: posts.slice(startIndex, endIndex),
+      total: posts.length,
+    };
+  } catch (error) {
+    console.error('Error fetching paginated posts:', error);
+    throw error;
+  }
 }

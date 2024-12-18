@@ -16,9 +16,10 @@ export interface JobPostDTO {
   url: string;
   startTime: Date;
   finishedTime: Date;
-  title?: string;
+  title: string;
   imageUrl?: string;
   imageAlt?: string;
   status: 'success' | 'error';
-  error?: string;
+  error: string; // Remover o opcional
+  type?: 'job-listing' | 'post';
 }

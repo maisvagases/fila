@@ -7,7 +7,7 @@ export interface JobPostDTO {
   imageUrl?: string;
   imageAlt?: string;
   status: 'success' | 'error';
-  error?: string;
+  error: string | undefined;
   type?: 'post' | 'job-listing';
 }
 

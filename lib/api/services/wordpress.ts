@@ -43,38 +43,53 @@ async function fetchMedia(mediaId: number): Promise<WordPressMedia | null> {
 export async function fetchWordPressPost(url: string): Promise<WordPressPostData> {
   try {
     const postId = url.split('?p=')[1];
+    console.log(`Fetching post with URL: ${url}, Extracted postId: ${postId}`);
+
     if (!postId) {
+      console.warn('Invalid URL: Could not extract post ID');
       return {
-        title: 'Error: Invalid URL',
+        title: `Post ${postId || 'Unknown'}`, // Fallback para título
         error: 'Could not extract post ID from URL'
       };
     }
 
     // Try job listing endpoint first
     let response = await fetchFromEndpoint(ENDPOINTS.JOB_LISTING(postId));
+    console.log(`Job Listing Endpoint Response Status: ${response.status}`);
     
     // If not found, try regular post endpoint
     if (response.status === 404) {
       response = await fetchFromEndpoint(ENDPOINTS.POST(postId));
+      console.log(`Post Endpoint Response Status: ${response.status}`);
     }
 
     if (!response.ok) {
+      console.warn(`Failed to fetch post: ${response.statusText}`);
       return {
-        title: 'Error: Post not found',
+        title: `Post ${postId}`, // Fallback para título
         error: `Failed to fetch post: ${response.statusText}`,
         type: undefined
       };
     }
 
     const data: WordPressPost = await response.json();
+    console.log('Fetched Post Data:', JSON.stringify(data, null, 2));
+
     let media = null;
     
     if (data.featured_media) {
       media = await fetchMedia(data.featured_media);
+      console.log('Media:', media);
     }
     
+    const title = data.title?.rendered 
+      ? sanitizeWordPressContent(data.title.rendered) 
+      : `Post ${postId}`; // Fallback para título usando o ID do post
+    
+    console.log(`Final Title: ${title}`);
+
     return {
-      title: data.title?.rendered ? sanitizeWordPressContent(data.title.rendered) : 'Untitled Post',
+      title,
       imageUrl: media?.source_url,
       imageAlt: media?.alt_text,
       type: response.url.includes('job-listings') ? 'job-listing' : 'post'
@@ -82,7 +97,9 @@ export async function fetchWordPressPost(url: string): Promise<WordPressPostData
   } catch (error) {
     console.error(`Error fetching WordPress title for ${url}:`, error);
     return {
-      title: error instanceof HTTPError ? `Error: ${error.message}` : 'Error loading post',
+      title: error instanceof HTTPError 
+        ? `Error: ${error.message}` 
+        : `Error loading post ${url.split('?p=')[1] || 'Unknown'}`,
       error: error instanceof Error ? error.message : 'Unknown error occurred'
     };
   }
