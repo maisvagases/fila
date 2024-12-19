@@ -15,9 +15,15 @@ export default async function Home() {
   let error = null;
   let initialData: PaginatedData = { posts: [], total: 0 };
   const now = new Date();
-
   try {
-    initialData = await getPaginatedJobPosts(1, 10);
+    const response = await getPaginatedJobPosts(1, 10);
+    initialData = {
+      posts: response.posts.map(post => ({
+        ...post,
+        imageUrl: post.imageUrl ?? undefined,
+      })),
+      total: response.total,
+    };
   } catch (e) {
     error = e instanceof Error ? e : new Error('Failed to fetch posts');
     console.error('Error fetching posts:', e);

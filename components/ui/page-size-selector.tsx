@@ -20,14 +20,14 @@ export function PageSizeSelector({
     return (
         <div className="flex items-center space-x-2">
             <p className="text-sm text-muted-foreground">
-                Itens por página
+                Itens por página:
             </p>
             <Select
                 value={pageSize.toString()}
                 onValueChange={(value) => onPageSizeChange(Number(value))}
             >
                 <SelectTrigger className="h-8 w-[70px]">
-                    <SelectValue placeholder={pageSize} />
+                    <SelectValue placeholder={pageSize.toString()} />
                 </SelectTrigger>
                 <SelectContent side="top">
                     {options.map((size) => (

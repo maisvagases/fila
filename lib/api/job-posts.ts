@@ -85,7 +85,12 @@ async function enrichPostsWithWordPressData(posts: JobPost[]): Promise<JobPostDT
       console.error('Rejected promise:', result.reason);
       return null;
     })
-    .filter((post): post is JobPostDTO => post !== null)
+    .filter((post): post is JobPostDTO => 
+      post !== null && 
+      post.imageUrl !== null &&
+      post.imageAlt !== null &&
+      (post.type === 'post' || post.type === 'job-listing' || post.type === 'job_listing')
+    )
     .sort((a, b) => {
       if (a && b) {
         return b.startTime.getTime() - a.startTime.getTime();
@@ -93,25 +98,21 @@ async function enrichPostsWithWordPressData(posts: JobPost[]): Promise<JobPostDT
       return 0; // ou outra lógica de fallback
     });
 
-  console.log(`Enrichment complete. Valid posts: ${validPosts.length} out of ${posts.length}`);
+  console.log(`Finalização do enriquecimento. Posts válidos: ${validPosts.length} de ${posts.length}`);
 
-  return validPosts;
+  return validPosts as JobPostDTO[];
 }
 
 export async function getPaginatedJobPosts(page: number, pageSize: number) {
   try {
-    console.log('Getting all posts without pagination...');
     const allPosts = await getEnrichedJobPosts();
     
-    console.log(`Total posts available: ${allPosts.length}`);
-    
-    // Calculate pagination
     const startIndex = (page - 1) * pageSize;
     const endIndex = startIndex + pageSize;
-    const paginatedPosts = allPosts.slice(startIndex, endIndex);
+    const paginatedPosts = allPosts.slice(startIndex, endIndex).filter(post => post !== null);
 
     return {
-      posts: paginatedPosts,
+      posts: paginatedPosts as JobPostDTO[],
       total: allPosts.length,
       page,
       pageSize,

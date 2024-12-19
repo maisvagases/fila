@@ -12,7 +12,7 @@ export interface JobPost {
   title?: {
     rendered: string;
   };
-  type?: 'post' | 'job-listing' | 'job_listing';
+  type: 'post' | 'job-listing' | 'job_listing';
   meta?: {
     _company_name?: string;
   };
@@ -27,10 +27,10 @@ export interface JobPostDTO {
   startTime: Date;
   finishedTime: Date;
   title: string;
-  imageUrl?: string;
-  imageAlt?: string;
+  imageUrl: string | null;
+  imageAlt: string;
   status: 'success' | 'error';
-  error: string; // Remover o opcional
-  type?: 'job-listing' | 'post';
+  error: string;
   companyName: string;
+  type: 'post' | 'job-listing' | 'job_listing';
 }

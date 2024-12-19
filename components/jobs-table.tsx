@@ -58,10 +58,10 @@ export function JobsTable({ initialPosts, totalPosts }: JobsTableProps) {
   // Function to generate visible page numbers
   const getVisiblePages = (current: number, total: number) => {
     if (total <= 5) return Array.from({ length: total }, (_, i) => i + 1);
-    
+
     if (current <= 3) return [1, 2, 3, 4, 5];
     if (current >= total - 2) return [total - 4, total - 3, total - 2, total - 1, total];
-    
+
     return [current - 2, current - 1, current, current + 1, current + 2];
   };
 
@@ -91,23 +91,23 @@ export function JobsTable({ initialPosts, totalPosts }: JobsTableProps) {
     const filtered = posts.filter(post => {
       const matchesTitle = post.title.toLowerCase().includes(filters.title.toLowerCase());
       const matchesUrl = post.url.toLowerCase().includes(filters.url.toLowerCase());
-      const matchesCompany = filters.company 
-        ? post.companyName.toLowerCase().includes(filters.company.toLowerCase()) 
+      const matchesCompany = filters.company
+        ? post.companyName.toLowerCase().includes(filters.company.toLowerCase())
         : true;
-    
-      const matchesDateRange = filters.dateRange 
-        ? (filters.dateRange.from && filters.dateRange.to 
+
+      const matchesDateRange = filters.dateRange
+        ? (filters.dateRange.from && filters.dateRange.to
           ? isWithinInterval(new Date(post.startTime), {
-              start: startOfDay(filters.dateRange.from),
-              end: endOfDay(filters.dateRange.to)
-            }) || 
-            isWithinInterval(new Date(post.finishedTime), {
-              start: startOfDay(filters.dateRange.from),
-              end: endOfDay(filters.dateRange.to)
-            })
+            start: startOfDay(filters.dateRange.from),
+            end: endOfDay(filters.dateRange.to)
+          }) ||
+          isWithinInterval(new Date(post.finishedTime), {
+            start: startOfDay(filters.dateRange.from),
+            end: endOfDay(filters.dateRange.to)
+          })
           : true)
         : true;
-    
+
       return matchesTitle && matchesUrl && matchesDateRange && matchesCompany;
     });
 
@@ -116,7 +116,7 @@ export function JobsTable({ initialPosts, totalPosts }: JobsTableProps) {
     const totalPages = Math.ceil(total / pagination.pageSize);
     const start = (pagination.currentPage - 1) * pagination.pageSize;
     const end = start + pagination.pageSize;
-    
+
     setPosts(filtered.slice(start, end));
     setPagination(prev => ({
       ...prev,
@@ -240,13 +240,13 @@ export function JobsTable({ initialPosts, totalPosts }: JobsTableProps) {
       </div>
 
       <div className="flex justify-between items-center mt-4">
-        <PageSizeSelector 
-          pageSize={pagination.pageSize} 
+        <PageSizeSelector
+          pageSize={pagination.pageSize}
           onPageSizeChange={setPageSize}
           options={[10, 25, 50, 100]}
         />
-        
-        <Pagination>
+
+        <Pagination className="flex justify-end">
           <PaginationContent>
             <PaginationItem>
               <PaginationFirst
@@ -255,12 +255,12 @@ export function JobsTable({ initialPosts, totalPosts }: JobsTableProps) {
               />
             </PaginationItem>
             <PaginationItem>
-              <PaginationPrevious 
+              <PaginationPrevious
                 onClick={() => setCurrentPage(pagination.currentPage - 1)}
                 disabled={pagination.currentPage === 1}
               />
             </PaginationItem>
-            
+
             {getVisiblePages(pagination.currentPage, pagination.totalPages).map((pageNum, index, array) => {
               // Add ellipsis if there's a gap
               if (index > 0 && pageNum - array[index - 1] > 1) {
@@ -270,7 +270,7 @@ export function JobsTable({ initialPosts, totalPosts }: JobsTableProps) {
                   </PaginationItem>
                 );
               }
-              
+
               return (
                 <PaginationItem key={pageNum}>
                   <PaginationLink
@@ -282,9 +282,9 @@ export function JobsTable({ initialPosts, totalPosts }: JobsTableProps) {
                 </PaginationItem>
               );
             })}
-            
+
             <PaginationItem>
-              <PaginationNext 
+              <PaginationNext
                 onClick={() => setCurrentPage(pagination.currentPage + 1)}
                 disabled={pagination.currentPage === pagination.totalPages}
               />
