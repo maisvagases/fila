@@ -27,6 +27,8 @@ import {
 } from "@/components/ui/pagination";
 import { PageSizeSelector } from "@/components/ui/page-size-selector";
 import { getPaginatedJobPosts } from "@/lib/api/job-posts";
+import { isWithinInterval, startOfDay, endOfDay } from 'date-fns';
+
 
 interface JobsTableProps {
   initialPosts: JobPostDTO[];
@@ -42,8 +44,7 @@ export function JobsTable({ initialPosts, totalPosts }: JobsTableProps) {
   const [filters, setFilters] = useState<SearchFilters>({
     title: '',
     url: '',
-    startDate: '',
-    endDate: '',
+    dateRange: undefined,
     company: ''
   });
 
@@ -95,13 +96,24 @@ export function JobsTable({ initialPosts, totalPosts }: JobsTableProps) {
   const filteredPosts = posts.filter(post => {
     const matchesTitle = post.title.toLowerCase().includes(filters.title.toLowerCase());
     const matchesUrl = post.url.toLowerCase().includes(filters.url.toLowerCase());
-    const matchesStartDate = filters.startDate ? new Date(post.startTime) >= new Date(filters.startDate) : true;
-    const matchesEndDate = filters.endDate ? new Date(post.finishedTime) <= new Date(filters.endDate) : true;
     const matchesCompany = filters.company 
       ? post.companyName.toLowerCase().includes(filters.company.toLowerCase()) 
       : true;
-
-    return matchesTitle && matchesUrl && matchesStartDate && matchesEndDate && matchesCompany;
+  
+    const matchesDateRange = filters.dateRange 
+      ? (filters.dateRange.from && filters.dateRange.to 
+        ? isWithinInterval(new Date(post.startTime), {
+            start: startOfDay(filters.dateRange.from),
+            end: endOfDay(filters.dateRange.to)
+          }) || 
+          isWithinInterval(new Date(post.finishedTime), {
+            start: startOfDay(filters.dateRange.from),
+            end: endOfDay(filters.dateRange.to)
+          })
+        : true)
+      : true;
+  
+    return matchesTitle && matchesUrl && matchesDateRange && matchesCompany;
   });
 
   const handlePageChange = (newPage: number) => {
