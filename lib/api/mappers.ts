@@ -30,8 +30,8 @@ export async function mapAPIResponseToDTO(data: any): Promise<JobPostDTO> {
       startTime: parseMongoDate(data.startTime || data.start_time),
       finishedTime: parseMongoDate(data.finishedTime),
       title: postData.title,
-      imageUrl: postData.imageUrl,
-      imageAlt: postData.imageAlt,
+      imageUrl: postData.imageUrl ?? undefined,
+      imageAlt: postData.imageAlt ?? undefined,
       status: postData.title === 'Error loading post' ? 'error' : 'success',
       error: '',
       companyName: postData.meta?._company_name || 'tipo Post'
