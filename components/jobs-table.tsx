@@ -12,23 +12,25 @@ import { formatDateTime } from '@/lib/api/date-utils';
 import type { JobPostDTO } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { calculateDurationInMinutes } from "@/lib/utils/date";
-import { ExternalLink, Newspaper, RefreshCw } from "lucide-react";
+import { ExternalLink, Newspaper } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from 'react';
 import { SearchFilter, SearchFilters } from './search-filter';
-import { 
-  Pagination, 
-  PaginationContent, 
-  PaginationItem, 
-  PaginationLink, 
-  PaginationNext, 
-  PaginationPrevious 
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationFirst,
+  PaginationItem,
+  PaginationLast,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious
 } from "@/components/ui/pagination";
 import { PageSizeSelector } from "@/components/ui/page-size-selector";
-import { getPaginatedJobPosts } from "@/lib/api/job-posts";
+import { TableSkeleton } from './table-skeleton';
 import { isWithinInterval, startOfDay, endOfDay } from 'date-fns';
-
 
 interface JobsTableProps {
   initialPosts: JobPostDTO[];
@@ -38,132 +40,147 @@ interface JobsTableProps {
 export function JobsTable({ initialPosts, totalPosts }: JobsTableProps) {
   const [posts, setPosts] = useState<JobPostDTO[]>(initialPosts);
   const [isLoading, setIsLoading] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-  const [totalPages, setTotalPages] = useState(1);
   const [filters, setFilters] = useState<SearchFilters>({
     title: '',
     url: '',
     dateRange: undefined,
     company: ''
   });
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    pageSize: 10,
+    totalPages: Math.ceil(totalPosts / 10),
+    total: totalPosts
+  });
+  const [allPosts, setAllPosts] = useState<JobPostDTO[]>(initialPosts);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchAllPosts = async () => {
-      try {
-        setIsLoading(true);
-        const response = await fetch('/api/posts?page=1&pageSize=1000');
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        if (data.error) {
-          throw new Error(data.error);
-        }
-
-        console.log(`Received ${data.posts.length} posts from API`);
-        setPosts(data.posts);
-      } catch (error) {
-        console.error('Error fetching posts:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
+  // Function to generate visible page numbers
+  const getVisiblePages = (current: number, total: number) => {
+    if (total <= 5) return Array.from({ length: total }, (_, i) => i + 1);
     
-    fetchAllPosts();
+    if (current <= 3) return [1, 2, 3, 4, 5];
+    if (current >= total - 2) return [total - 4, total - 3, total - 2, total - 1, total];
+    
+    return [current - 2, current - 1, current, current + 1, current + 2];
+  };
+
+  const fetchPosts = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const response = await fetch('/api/posts?page=1&pageSize=1000');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setAllPosts(data.posts);
+      applyFiltersAndPagination(data.posts);
+    } catch (error) {
+      console.error('Error fetching posts:', error);
+      setError(error instanceof Error ? error.message : 'Failed to fetch posts');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const applyFiltersAndPagination = (posts: JobPostDTO[]) => {
+    // Apply filters
+    const filtered = posts.filter(post => {
+      const matchesTitle = post.title.toLowerCase().includes(filters.title.toLowerCase());
+      const matchesUrl = post.url.toLowerCase().includes(filters.url.toLowerCase());
+      const matchesCompany = filters.company 
+        ? post.companyName.toLowerCase().includes(filters.company.toLowerCase()) 
+        : true;
+    
+      const matchesDateRange = filters.dateRange 
+        ? (filters.dateRange.from && filters.dateRange.to 
+          ? isWithinInterval(new Date(post.startTime), {
+              start: startOfDay(filters.dateRange.from),
+              end: endOfDay(filters.dateRange.to)
+            }) || 
+            isWithinInterval(new Date(post.finishedTime), {
+              start: startOfDay(filters.dateRange.from),
+              end: endOfDay(filters.dateRange.to)
+            })
+          : true)
+        : true;
+    
+      return matchesTitle && matchesUrl && matchesDateRange && matchesCompany;
+    });
+
+    // Apply pagination
+    const total = filtered.length;
+    const totalPages = Math.ceil(total / pagination.pageSize);
+    const start = (pagination.currentPage - 1) * pagination.pageSize;
+    const end = start + pagination.pageSize;
+    
+    setPosts(filtered.slice(start, end));
+    setPagination(prev => ({
+      ...prev,
+      total,
+      totalPages
+    }));
+  };
+
+  // Effect for initial data fetch
+  useEffect(() => {
+    fetchPosts();
   }, []);
 
+  const setPageSize = (size: number) => {
+    setPagination(prev => ({
+      ...prev,
+      pageSize: size,
+      currentPage: 1,
+      totalPages: Math.ceil(prev.total / size)
+    }));
+  };
+
+  const setCurrentPage = (page: number) => {
+    setPagination(prev => ({
+      ...prev,
+      currentPage: page
+    }));
+  };
+
+  const handleFilterChange = (newFilters: SearchFilters) => {
+    setFilters(newFilters);
+    setPagination(prev => ({ ...prev, currentPage: 1 }));
+  };
+
+  // Effect for applying filters
   useEffect(() => {
-    const fetchPaginatedPosts = async () => {
-      try {
-        setIsLoading(true);
-        const { posts, totalPages } = await getPaginatedJobPosts(currentPage, pageSize);
-        setPosts(posts);
-        setTotalPages(totalPages);
-      } catch (error) {
-        console.error('Error fetching paginated posts:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchPaginatedPosts();
-  }, [currentPage, pageSize]);
-
-  const filteredPosts = posts.filter(post => {
-    const matchesTitle = post.title.toLowerCase().includes(filters.title.toLowerCase());
-    const matchesUrl = post.url.toLowerCase().includes(filters.url.toLowerCase());
-    const matchesCompany = filters.company 
-      ? post.companyName.toLowerCase().includes(filters.company.toLowerCase()) 
-      : true;
-  
-    const matchesDateRange = filters.dateRange 
-      ? (filters.dateRange.from && filters.dateRange.to 
-        ? isWithinInterval(new Date(post.startTime), {
-            start: startOfDay(filters.dateRange.from),
-            end: endOfDay(filters.dateRange.to)
-          }) || 
-          isWithinInterval(new Date(post.finishedTime), {
-            start: startOfDay(filters.dateRange.from),
-            end: endOfDay(filters.dateRange.to)
-          })
-        : true)
-      : true;
-  
-    return matchesTitle && matchesUrl && matchesDateRange && matchesCompany;
-  });
-
-  const handlePageChange = (newPage: number) => {
-    setCurrentPage(newPage);
-  };
-
-  const handlePageSizeChange = (newPageSize: number) => {
-    setPageSize(newPageSize);
-    setCurrentPage(1); // Reset para a primeira página ao mudar o tamanho
-  };
+    if (allPosts.length > 0) {
+      applyFiltersAndPagination(allPosts);
+    }
+  }, [filters, pagination.currentPage, pagination.pageSize]);
 
   return (
     <div>
-      <SearchFilter onFilterChange={setFilters} />
+      <SearchFilter onFilterChange={handleFilterChange} />
       <div className="text-sm text-muted-foreground mb-4">
-        {filteredPosts.length} resultado(s) encontrado(s)
+        {pagination.total} resultado(s) encontrado(s) - Exibindo página {pagination.currentPage} de {pagination.totalPages}
       </div>
 
       <div className="rounded-md border relative">
-        {isLoading && (
-          <div className="absolute inset-0 bg-background/50 flex items-center justify-center z-50">
-            <div className="animate-spin">
-              <RefreshCw className="h-8 w-8 text-muted-foreground" />
-            </div>
-          </div>
-        )}
-
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead key="image" className="w-[80px]">
-                Image
-              </TableHead>
-              <TableHead key="title">Título</TableHead>
-              <TableHead key="startTime" className="w-[180px]">
-                Início
-              </TableHead>
-              <TableHead key="endTime" className="w-[180px]">
-                Fim
-              </TableHead>
-              <TableHead key="duration" className="w-[100px] text-right">
-                Duração
-              </TableHead>
-              <TableHead key="company" className="w-[200px]">Empresa</TableHead>
-              <TableHead key="link" className="w-[20px]"> Link</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredPosts.map((post) => {
-              return (
+        {isLoading ? <TableSkeleton /> : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[80px]">Image</TableHead>
+                <TableHead>Título</TableHead>
+                <TableHead className="w-[180px]">Início</TableHead>
+                <TableHead className="w-[180px]">Fim</TableHead>
+                <TableHead className="w-[100px] text-right">Duração</TableHead>
+                <TableHead className="w-[200px]">Empresa</TableHead>
+                <TableHead className="w-[20px]">Link</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {posts.map((post) => (
                 <TableRow key={post.id}>
                   <TableCell>
                     {post.imageUrl ? (
@@ -191,22 +208,13 @@ export function JobsTable({ initialPosts, totalPosts }: JobsTableProps) {
                     </div>
                   </TableCell>
                   <TableCell>
-                    {post.startTime
-                      ? formatDateTime(post.startTime)
-                      : "Data inválida"}
+                    {formatDateTime(post.startTime.toString())}
                   </TableCell>
                   <TableCell>
-                    {post.finishedTime
-                      ? formatDateTime(post.finishedTime)
-                      : "Data inválida"}
+                    {formatDateTime(post.finishedTime.toString())}
                   </TableCell>
                   <TableCell className="text-right">
-                    {post.startTime && post.finishedTime
-                      ? `${calculateDurationInMinutes(
-                        post.startTime,
-                        post.finishedTime
-                      )} min`
-                      : "-"}
+                    {`${calculateDurationInMinutes(post.startTime, post.finishedTime)} min`}
                   </TableCell>
                   <TableCell>
                     {['job_listing', 'job-listing'].includes(post.type || '') ? post.companyName : '-'}
@@ -225,60 +233,71 @@ export function JobsTable({ initialPosts, totalPosts }: JobsTableProps) {
                     </Link>
                   </TableCell>
                 </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
+              ))}
+            </TableBody>
+          </Table>
+        )}
       </div>
 
       <div className="flex justify-between items-center mt-4">
         <PageSizeSelector 
-          pageSize={pageSize} 
-          onPageSizeChange={handlePageSizeChange} 
+          pageSize={pagination.pageSize} 
+          onPageSizeChange={setPageSize}
+          options={[10, 25, 50, 100]}
         />
         
         <Pagination>
           <PaginationContent>
             <PaginationItem>
+              <PaginationFirst
+                onClick={() => setCurrentPage(1)}
+                disabled={pagination.currentPage === 1}
+              />
+            </PaginationItem>
+            <PaginationItem>
               <PaginationPrevious 
-                href="#" 
-                onClick={(e) => {
-                  e.preventDefault();
-                  if (currentPage > 1) handlePageChange(currentPage - 1);
-                }}
-                aria-disabled={currentPage === 1}
+                onClick={() => setCurrentPage(pagination.currentPage - 1)}
+                disabled={pagination.currentPage === 1}
               />
             </PaginationItem>
             
-            {Array.from({ length: totalPages }, (_, i) => (
-              <PaginationItem key={i}>
-                <PaginationLink
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handlePageChange(i + 1);
-                  }}
-                  isActive={currentPage === i + 1}
-                >
-                  {i + 1}
-                </PaginationLink>
-              </PaginationItem>
-            ))}
+            {getVisiblePages(pagination.currentPage, pagination.totalPages).map((pageNum, index, array) => {
+              // Add ellipsis if there's a gap
+              if (index > 0 && pageNum - array[index - 1] > 1) {
+                return (
+                  <PaginationItem key={`ellipsis-${pageNum}`}>
+                    <PaginationEllipsis />
+                  </PaginationItem>
+                );
+              }
+              
+              return (
+                <PaginationItem key={pageNum}>
+                  <PaginationLink
+                    onClick={() => setCurrentPage(pageNum)}
+                    isActive={pagination.currentPage === pageNum}
+                  >
+                    {pageNum}
+                  </PaginationLink>
+                </PaginationItem>
+              );
+            })}
             
             <PaginationItem>
               <PaginationNext 
-                href="#" 
-                onClick={(e) => {
-                  e.preventDefault();
-                  if (currentPage < totalPages) handlePageChange(currentPage + 1);
-                }}
-                aria-disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(pagination.currentPage + 1)}
+                disabled={pagination.currentPage === pagination.totalPages}
+              />
+            </PaginationItem>
+            <PaginationItem>
+              <PaginationLast
+                onClick={() => setCurrentPage(pagination.totalPages)}
+                disabled={pagination.currentPage === pagination.totalPages}
               />
             </PaginationItem>
           </PaginationContent>
         </Pagination>
       </div>
-
     </div>
   );
 }

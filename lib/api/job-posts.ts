@@ -43,8 +43,8 @@ async function enrichPostsWithWordPressData(posts: JobPost[]): Promise<JobPostDT
           startTime: new Date(post.startTime.$date),
           finishedTime: new Date(post.finishedTime.$date),
           title: wpData.title || `Post ${post._id.$oid.slice(-6)}`,
-          imageUrl: wpData.imageUrl,
-          imageAlt: wpData.imageAlt,
+          imageUrl: wpData.imageUrl || null,
+          imageAlt: wpData.imageAlt || '',
           status: wpData.error ? 'error' as const : 'success' as const,
           error: wpData.error || 'No error details',
           type: wpData.type,
@@ -105,13 +105,17 @@ export async function getPaginatedJobPosts(page: number, pageSize: number) {
     
     console.log(`Total posts available: ${allPosts.length}`);
     
-    // Retornar todos os posts sem paginação
+    // Calculate pagination
+    const startIndex = (page - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    const paginatedPosts = allPosts.slice(startIndex, endIndex);
+
     return {
-      posts: allPosts, // Retorna todos os posts ao invés de fatiar
+      posts: paginatedPosts,
       total: allPosts.length,
-      page: 1,
-      pageSize: allPosts.length,
-      totalPages: 1
+      page,
+      pageSize,
+      totalPages: Math.ceil(allPosts.length / pageSize)
     };
   } catch (error) {
     console.error('Error in getPaginatedJobPosts:', error);

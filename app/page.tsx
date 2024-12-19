@@ -1,10 +1,8 @@
 import { JobsTable } from '@/components/jobs-table';
-import { Button } from '@/components/ui/button';
 import { getPaginatedJobPosts } from '@/lib/api/job-posts';
 import type { JobPostDTO } from '@/lib/api/types';
-import { AlertCircle, History, RefreshCw } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { AlertCircle, History } from 'lucide-react';
+import { RefreshButton } from '@/components/refresh-button';
 
 interface PaginatedData {
   posts: JobPostDTO[];
@@ -31,18 +29,10 @@ export default async function Home() {
         <div className="flex items-center gap-3">
           <History className="h-8 w-8 text-primary" />
           <div>
-            <h1 className="text-3xl font-bold">Histórico de postagens</h1>
+            <h1 className="text-3xl font-bold">Histórico de envios</h1>
           </div>
         </div>
-        <form action={async () => {
-          'use server';
-          await getPaginatedJobPosts(1, 10);
-        }}>
-          <Button type="submit" variant="outline" size="sm" className="gap-2">
-            <RefreshCw className="h-4 w-4" />
-            Atualizar
-          </Button>
-        </form>
+        <RefreshButton />
       </div>
 
       {error ? (

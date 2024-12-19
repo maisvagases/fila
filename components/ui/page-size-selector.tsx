@@ -8,26 +8,35 @@ import {
 
 interface PageSizeSelectorProps {
     pageSize: number;
-    onPageSizeChange: (size: number) => void;
+    onPageSizeChange: (newSize: number) => void;
+    options?: number[];
 }
 
-export function PageSizeSelector({ pageSize, onPageSizeChange }: PageSizeSelectorProps) {
+export function PageSizeSelector({
+    pageSize,
+    onPageSizeChange,
+    options = [10, 25, 50, 100]
+}: PageSizeSelectorProps) {
     return (
-        <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Registros por página:</span>
+        <div className="flex items-center space-x-2">
+            <p className="text-sm text-muted-foreground">
+                Itens por página
+            </p>
             <Select
                 value={pageSize.toString()}
                 onValueChange={(value) => onPageSizeChange(Number(value))}
             >
-                <SelectTrigger className="w-[80px]">
-                    <SelectValue placeholder="10" />
+                <SelectTrigger className="h-8 w-[70px]">
+                    <SelectValue placeholder={pageSize} />
                 </SelectTrigger>
-                <SelectContent>
-                    <SelectItem value="10">10</SelectItem>
-                    <SelectItem value="50">50</SelectItem>
-                    <SelectItem value="100">100</SelectItem>
+                <SelectContent side="top">
+                    {options.map((size) => (
+                        <SelectItem key={size} value={size.toString()}>
+                            {size}
+                        </SelectItem>
+                    ))}
                 </SelectContent>
             </Select>
         </div>
-    )
-} 
+    );
+}

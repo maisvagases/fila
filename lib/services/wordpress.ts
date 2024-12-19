@@ -54,12 +54,12 @@ export async function fetchWordPressPost(url: string): Promise<WordPressPostData
     }
 
     // Try job listing endpoint first
-    let response = await fetchFromEndpoint(`${ENDPOINTS.JOB_LISTING(postId)}?_fields=title,featured_media,type`);
+    let response = await fetchFromEndpoint(`${ENDPOINTS.JOB_LISTING(postId)}?_embed`);
     console.log(`Job Listing Endpoint Response Status: ${response.status}`);
     
     // If not found, try regular post endpoint
     if (response.status === 404) {
-      response = await fetchFromEndpoint(`${ENDPOINTS.POST(postId)}?_fields=title,featured_media,type`);
+      response = await fetchFromEndpoint(`${ENDPOINTS.POST(postId)}?_embed`);
       console.log(`Post Endpoint Response Status: ${response.status}`);
     }
 
@@ -73,21 +73,31 @@ export async function fetchWordPressPost(url: string): Promise<WordPressPostData
     }
 
     const data: WordPressPost = await response.json();
-
-    let media = null;
-    if (data.featured_media) {
-      media = await fetchMedia(data.featured_media);
+    const isJobListing = response.url.includes('job-listings');
+    
+    if (!data.title?.rendered) {
+      throw new Error('Post title not found');
     }
+
+    // Get featured media from _embedded data
+    const featuredMedia = data._embedded?.['wp:featuredmedia']?.[0];
     
     const title = data.title?.rendered 
       ? sanitizeWordPressContent(data.title.rendered) 
       : `Post ${postId}`;
 
+    const imageUrl = featuredMedia?.source_url || null;
+    const imageAlt = featuredMedia?.alt_text || title;
+
+    console.log('Extracted media:', { imageUrl, imageAlt });
+
     return {
       title,
-      imageUrl: media?.source_url,
-      imageAlt: media?.alt_text,
-      type: response.url.includes('job-listings') ? 'job-listing' : 'post'
+      imageUrl,
+      imageAlt,
+      type: isJobListing ? 'job-listing' : 'post',
+      meta: data.meta,
+      companyName: data.meta?._company_name || ''
     };
   } catch (error) {
     console.error(`Error fetching WordPress title for ${url}:`, error);

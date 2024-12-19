@@ -14,11 +14,24 @@ export interface WordPressPost {
     'wp:featuredmedia'?: Array<{
       source_url?: string;
       alt_text?: string;
+      media_details?: {
+        sizes?: {
+          full?: {
+            source_url: string;
+          };
+          medium?: {
+            source_url: string;
+          };
+        };
+      };
     }>;
     'wp:term'?: Array<{
       taxonomy?: string;
       name?: string;
     }>;
+  };
+  meta?: {
+    _company_name?: string;
   };
 }
 
@@ -37,4 +50,14 @@ export interface WordPressPostData {
 export interface WordPressMedia {
   source_url: string;
   alt_text?: string;
+  media_details?: {
+    sizes?: {
+      full?: {
+        source_url: string;
+      };
+      medium?: {
+        source_url: string;
+      };
+    };
+  };
 }
