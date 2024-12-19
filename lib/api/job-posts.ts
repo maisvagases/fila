@@ -47,7 +47,10 @@ async function enrichPostsWithWordPressData(posts: JobPost[]): Promise<JobPostDT
           imageAlt: wpData.imageAlt,
           status: wpData.error ? 'error' as const : 'success' as const,
           error: wpData.error || 'No error details',
-          type: wpData.type
+          type: wpData.type,
+          companyName: ['job-listing', 'job_listing'].includes(wpData.type || '') 
+            ? (wpData.meta?._company_name || wpData.companyName || 'Empresa não identificada')
+            : 'tipo Post'
         };
       } catch (error) {
         console.error(`Error enriching post ${post._id.$oid}:`, error);
@@ -79,12 +82,16 @@ async function enrichPostsWithWordPressData(posts: JobPost[]): Promise<JobPostDT
       if (result.status === 'fulfilled') {
         return result.value;
       }
-      // Se rejeitado, log do erro e retorna null
       console.error('Rejected promise:', result.reason);
       return null;
     })
     .filter((post): post is JobPostDTO => post !== null)
-    .sort((a, b) => b.startTime.getTime() - a.startTime.getTime());
+    .sort((a, b) => {
+      if (a && b) {
+        return b.startTime.getTime() - a.startTime.getTime();
+      }
+      return 0; // ou outra lógica de fallback
+    });
 
   console.log(`Enrichment complete. Valid posts: ${validPosts.length} out of ${posts.length}`);
 

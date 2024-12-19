@@ -7,6 +7,9 @@ interface WordPressPost {
     rendered: string;
   },
   featured_media?: number;
+  meta?: {
+    _company_name?: string;
+  };
   _embedded?: {
     'wp:featuredmedia'?: Array<{
       source_url?: string;
@@ -19,11 +22,12 @@ export interface WordPressPostData {
   title: string;
   imageUrl?: string;
   imageAlt?: string;
+  companyName?: string;
 }
 
 export async function fetchWordPressPost(url: string): Promise<WordPressPostData> {
   try {
-    const response = await fetch(`${url}?_embed&_fields=title,featured_media,_embedded`, {
+    const response = await fetch(`${url}?_embed&_fields=title,featured_media,meta`, {
       next: { revalidate: API_CONFIG.REVALIDATION.wordpress },
       headers: {
         'User-Agent': 'Mozilla/5.0 (compatible; JobPostManager/1.0)',
@@ -42,7 +46,8 @@ export async function fetchWordPressPost(url: string): Promise<WordPressPostData
     return {
       title: data.title?.rendered ? sanitizeWordPressContent(data.title.rendered) : 'Untitled Post',
       imageUrl: featuredMedia?.source_url,
-      imageAlt: featuredMedia?.alt_text
+      imageAlt: featuredMedia?.alt_text,
+      companyName: data.meta?._company_name
     };
   } catch (error) {
     console.error(`Error fetching WordPress title for ${url}:`, error);

@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect } from 'react';
 import {
   Table,
   TableBody,
@@ -9,13 +8,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { formatDateTime } from '@/lib/api/date-utils';
 import type { JobPostDTO } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
-import { calculateDurationInMinutes, formatToGMT3 } from "@/lib/utils/date";
+import { calculateDurationInMinutes } from "@/lib/utils/date";
 import { ExternalLink, Newspaper, RefreshCw } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { formatDateTime } from '@/lib/api/date-utils';
+import { useEffect, useState } from 'react';
 import { SearchFilter, SearchFilters } from './search-filter';
 
 interface JobsTableProps {
@@ -87,7 +87,7 @@ export function JobsTable({ initialPosts, totalPosts }: JobsTableProps) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead key="image" className="w-[120px]">
+              <TableHead key="image" className="w-[80px]">
                 Image
               </TableHead>
               <TableHead key="title">Título</TableHead>
@@ -100,9 +100,8 @@ export function JobsTable({ initialPosts, totalPosts }: JobsTableProps) {
               <TableHead key="duration" className="w-[100px] text-right">
                 Duração
               </TableHead>
-              <TableHead key="link" className="w-[70px]">
-                Link
-              </TableHead>
+              <TableHead key="company" className="w-[200px]">Empresa</TableHead>
+              <TableHead key="link" className="w-[20px]"> Link</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -151,6 +150,9 @@ export function JobsTable({ initialPosts, totalPosts }: JobsTableProps) {
                         post.finishedTime
                       )} min`
                       : "-"}
+                  </TableCell>
+                  <TableCell>
+                    {['job_listing', 'job-listing'].includes(post.type || '') ? post.companyName : '-'}
                   </TableCell>
                   <TableCell>
                     <Link

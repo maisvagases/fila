@@ -33,7 +33,8 @@ export async function mapAPIResponseToDTO(data: any): Promise<JobPostDTO> {
       imageUrl: postData.imageUrl,
       imageAlt: postData.imageAlt,
       status: postData.title === 'Error loading post' ? 'error' : 'success',
-      error: ''
+      error: '',
+      companyName: postData.meta?._company_name || 'tipo Post'
     };
   } catch (error) {
     console.error('Error mapping job post:', error);
@@ -44,7 +45,8 @@ export async function mapAPIResponseToDTO(data: any): Promise<JobPostDTO> {
       finishedTime: new Date(),
       title: 'Error: Invalid Data',
       status: 'error',
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
+      companyName: 'tipo Post'
     };
   }
 }

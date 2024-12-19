@@ -14,9 +14,13 @@ export async function mapAPIResponseToDTO(data: JobPost): Promise<JobPostDTO> {
       url: String(data.url),
       startTime: parseMongoDate(data.startTime),
       finishedTime: parseMongoDate(data.finishedTime),
-      title: 'Some Title',
+      title: data.title?.rendered || 'Untitled Post',
       status: 'success',
       error: '',
+      companyName: data.meta?._company_name || 
+                   data.companies?.[0]?._company_name || 
+                   'Empresa não identificada',
+      type: data.type
     };
   } catch (error) {
     console.error('Error mapping job post:', error);
@@ -27,7 +31,8 @@ export async function mapAPIResponseToDTO(data: JobPost): Promise<JobPostDTO> {
       finishedTime: new Date(),
       title: 'Error: Invalid Data',
       status: 'error',
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
+      companyName: 'tipo Post'
     };
   }
 }

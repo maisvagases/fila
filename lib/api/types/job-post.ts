@@ -1,14 +1,15 @@
 export interface JobPostDTO {
-  _id: string;
+  id: string;
   url: string;
   startTime: Date;
   finishedTime: Date;
-  title?: string;
+  title: string;
   imageUrl?: string;
   imageAlt?: string;
   status: 'success' | 'error';
-  error: string | undefined;
-  type?: 'post' | 'job-listing';
+  error: string;
+  type?: 'job-listing' | 'post';
+  companyName: string;
 }
 
 export interface JobPostResponse {

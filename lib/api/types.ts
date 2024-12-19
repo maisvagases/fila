@@ -8,6 +8,8 @@ export interface JobPostDTO {
   imageAlt?: string;
   status: 'success' | 'error';
   error: string; // Remover o opcional
+  companyName: string;
+  type?: string; // Add this line
 }
 
 export interface APIError {

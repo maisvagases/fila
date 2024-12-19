@@ -1,7 +1,7 @@
 import { API_CONFIG } from '@/lib/config';
 import { HTTPError } from '@/lib/utils/http';
 import { sanitizeWordPressContent } from '@/lib/utils/wordpress';
-import type { WordPressPost, WordPressPostData, WordPressMedia } from '../types/wordpress';
+import type { WordPressMedia, WordPressPost, WordPressPostData } from '../types/wordpress';
 
 const ENDPOINTS = {
   POST: (id: string) => `https://maisvagases.com.br/wp-json/wp/v2/posts/${id}`,
@@ -54,12 +54,12 @@ export async function fetchWordPressPost(url: string): Promise<WordPressPostData
     }
 
     // Try job listing endpoint first
-    let response = await fetchFromEndpoint(`${ENDPOINTS.JOB_LISTING(postId)}?_fields=title,featured_media,type`);
+    let response = await fetchFromEndpoint(`${ENDPOINTS.JOB_LISTING(postId)}?_fields=title,featured_media,type,meta&_embed`);
     console.log(`Job Listing Endpoint Response Status: ${response.status}`);
     
     // If not found, try regular post endpoint
     if (response.status === 404) {
-      response = await fetchFromEndpoint(`${ENDPOINTS.POST(postId)}?_fields=title,featured_media,type`);
+      response = await fetchFromEndpoint(`${ENDPOINTS.POST(postId)}?_fields=title,featured_media,type,meta&_embed`);
       console.log(`Post Endpoint Response Status: ${response.status}`);
     }
 
@@ -73,6 +73,14 @@ export async function fetchWordPressPost(url: string): Promise<WordPressPostData
     }
 
     const data: WordPressPost = await response.json();
+    console.log('WordPress Post Data:', JSON.stringify(data, null, 2));
+
+    // Tenta extrair o nome da empresa de diferentes fontes
+const companyName = 
+data.meta?._company_name || 
+data._embedded?.['wp:term']?.find(term => term.taxonomy === 'companies')?.name;
+
+console.log('Extracted Company Name:', companyName);
 
     let media = null;
     if (data.featured_media) {
@@ -83,12 +91,14 @@ export async function fetchWordPressPost(url: string): Promise<WordPressPostData
       ? sanitizeWordPressContent(data.title.rendered) 
       : `Post ${postId}`;
 
-    return {
-      title,
-      imageUrl: media?.source_url,
-      imageAlt: media?.alt_text,
-      type: response.url.includes('job-listings') ? 'job-listing' : 'post'
-    };
+      return {
+        title,
+        imageUrl: media?.source_url,
+        imageAlt: media?.alt_text,
+        type: response.url.includes('job-listings') ? 'job-listing' : 'post',
+        companyName, // Adicionar o nome da empresa ao retorno
+        meta: data.meta // Preservar os metadados originais
+      };
   } catch (error) {
     console.error(`Error fetching WordPress title for ${url}:`, error);
     return {
