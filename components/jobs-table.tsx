@@ -17,6 +17,16 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from 'react';
 import { SearchFilter, SearchFilters } from './search-filter';
+import { 
+  Pagination, 
+  PaginationContent, 
+  PaginationItem, 
+  PaginationLink, 
+  PaginationNext, 
+  PaginationPrevious 
+} from "@/components/ui/pagination";
+import { PageSizeSelector } from "@/components/ui/page-size-selector";
+import { getPaginatedJobPosts } from "@/lib/api/job-posts";
 
 interface JobsTableProps {
   initialPosts: JobPostDTO[];
@@ -26,11 +36,15 @@ interface JobsTableProps {
 export function JobsTable({ initialPosts, totalPosts }: JobsTableProps) {
   const [posts, setPosts] = useState<JobPostDTO[]>(initialPosts);
   const [isLoading, setIsLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
   const [filters, setFilters] = useState<SearchFilters>({
     title: '',
     url: '',
     startDate: '',
-    endDate: ''
+    endDate: '',
+    company: ''
   });
 
   useEffect(() => {
@@ -57,17 +71,47 @@ export function JobsTable({ initialPosts, totalPosts }: JobsTableProps) {
       }
     };
 
+    
     fetchAllPosts();
   }, []);
+
+  useEffect(() => {
+    const fetchPaginatedPosts = async () => {
+      try {
+        setIsLoading(true);
+        const { posts, totalPages } = await getPaginatedJobPosts(currentPage, pageSize);
+        setPosts(posts);
+        setTotalPages(totalPages);
+      } catch (error) {
+        console.error('Error fetching paginated posts:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchPaginatedPosts();
+  }, [currentPage, pageSize]);
 
   const filteredPosts = posts.filter(post => {
     const matchesTitle = post.title.toLowerCase().includes(filters.title.toLowerCase());
     const matchesUrl = post.url.toLowerCase().includes(filters.url.toLowerCase());
     const matchesStartDate = filters.startDate ? new Date(post.startTime) >= new Date(filters.startDate) : true;
     const matchesEndDate = filters.endDate ? new Date(post.finishedTime) <= new Date(filters.endDate) : true;
+    const matchesCompany = filters.company 
+      ? post.companyName.toLowerCase().includes(filters.company.toLowerCase()) 
+      : true;
 
-    return matchesTitle && matchesUrl && matchesStartDate && matchesEndDate;
+    return matchesTitle && matchesUrl && matchesStartDate && matchesEndDate && matchesCompany;
   });
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+  };
+
+  const handlePageSizeChange = (newPageSize: number) => {
+    setPageSize(newPageSize);
+    setCurrentPage(1); // Reset para a primeira página ao mudar o tamanho
+  };
 
   return (
     <div>
@@ -75,6 +119,7 @@ export function JobsTable({ initialPosts, totalPosts }: JobsTableProps) {
       <div className="text-sm text-muted-foreground mb-4">
         {filteredPosts.length} resultado(s) encontrado(s)
       </div>
+
       <div className="rounded-md border relative">
         {isLoading && (
           <div className="absolute inset-0 bg-background/50 flex items-center justify-center z-50">
@@ -173,6 +218,55 @@ export function JobsTable({ initialPosts, totalPosts }: JobsTableProps) {
           </TableBody>
         </Table>
       </div>
+
+      <div className="flex justify-between items-center mt-4">
+        <PageSizeSelector 
+          pageSize={pageSize} 
+          onPageSizeChange={handlePageSizeChange} 
+        />
+        
+        <Pagination>
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious 
+                href="#" 
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (currentPage > 1) handlePageChange(currentPage - 1);
+                }}
+                aria-disabled={currentPage === 1}
+              />
+            </PaginationItem>
+            
+            {Array.from({ length: totalPages }, (_, i) => (
+              <PaginationItem key={i}>
+                <PaginationLink
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handlePageChange(i + 1);
+                  }}
+                  isActive={currentPage === i + 1}
+                >
+                  {i + 1}
+                </PaginationLink>
+              </PaginationItem>
+            ))}
+            
+            <PaginationItem>
+              <PaginationNext 
+                href="#" 
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (currentPage < totalPages) handlePageChange(currentPage + 1);
+                }}
+                aria-disabled={currentPage === totalPages}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
+      </div>
+
     </div>
   );
 }

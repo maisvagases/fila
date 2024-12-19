@@ -12,6 +12,7 @@ export interface SearchFilters {
     url: string;
     startDate: string;
     endDate: string;
+    company: string;
 }
 
 export function SearchFilter({ onFilterChange }: SearchFilterProps) {
@@ -19,7 +20,8 @@ export function SearchFilter({ onFilterChange }: SearchFilterProps) {
         title: '',
         url: '',
         startDate: '',
-        endDate: ''
+        endDate: '',
+        company: ''
     });
 
     const handleFilterChange = (field: keyof SearchFilters) => (
@@ -57,6 +59,18 @@ export function SearchFilter({ onFilterChange }: SearchFilterProps) {
                         placeholder="Filtrar por link..."
                         value={filters.url}
                         onChange={handleFilterChange('url')}
+                    />
+                </div>
+
+                <div className="flex flex-col gap-2">
+                    <label htmlFor="company" className="text-sm text-muted-foreground">
+                        Empresa
+                    </label>
+                    <Input
+                        id="company"
+                        placeholder="Filtrar por empresa..."
+                        value={filters.company}
+                        onChange={handleFilterChange('company')}
                     />
                 </div>
 
