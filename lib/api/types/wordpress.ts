@@ -30,18 +30,15 @@ export interface WordPressPost {
       name?: string;
     }>;
   };
-  meta?: {
-    _company_name?: string;
-  };
 }
 
 export interface WordPressPostData {
   title: string;
-  imageUrl?: string;
-  imageAlt?: string;
-  type?: 'post' | 'job-listing' | 'job_listing';
-  error?: string;
-  companyName?: string;
+  imageUrl: string | null;
+  imageAlt: string;
+  type: 'post' | 'job-listing' | 'job_listing';
+  error: string;
+  companyName: string;
   meta?: {
     _company_name?: string;
   };
