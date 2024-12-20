@@ -81,6 +81,7 @@ export async function fetchWordPressPost(url: string): Promise<WordPressPostData
 
     if (!postId) {
       console.warn('Invalid URL: Could not extract post ID');
+      // @ts-ignore
       return {
         title: `Post ${postId || 'Unknown'}`,
         imageUrl: null,
@@ -89,7 +90,7 @@ export async function fetchWordPressPost(url: string): Promise<WordPressPostData
         error: 'Could not extract post ID from URL',
         type: 'post',
         meta: {}
-      } as WordPressPostData;
+      };
     }
 
     // Tentar múltiplos endpoints
@@ -102,7 +103,7 @@ export async function fetchWordPressPost(url: string): Promise<WordPressPostData
       try {
         console.log(`Trying endpoint: ${endpoint}`);
         const response = await fetch(endpoint, {
-          next: { revalidate: 3600 }, // cache por 1 hora
+          next: { revalidate: 960 }, // cache por 16 minutos
           headers: {
             'User-Agent': 'Mozilla/5.0 (compatible; JobPostManager/1.0)',
             'Accept': 'application/json'
