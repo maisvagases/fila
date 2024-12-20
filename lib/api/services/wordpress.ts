@@ -1,7 +1,6 @@
 import { API_CONFIG } from '@/lib/config';
 import { HTTPError } from '@/lib/utils/http';
 import { sanitizeWordPressContent } from '@/lib/utils/wordpress';
-import type { WordPressMedia, WordPressPost, WordPressPostData } from '../types/wordpress';
 
 const ENDPOINTS = {
   POST: (id: string) => `https://maisvagases.com.br/wp-json/wp/v2/posts/${id}`,
@@ -40,72 +39,123 @@ async function fetchMedia(mediaId: number): Promise<WordPressMedia | null> {
   }
 }
 
+interface WordPressPost {
+  title?: {
+    rendered: string;
+  },
+  featured_media?: number;
+  meta?: {
+    _company_name?: string;
+  };
+  _embedded?: {
+    'wp:featuredmedia'?: Array<{
+      source_url?: string;
+      alt_text?: string;
+    }>;
+  };
+}
+
+interface WordPressMedia {
+  source_url?: string;
+  alt_text?: string;
+}
+export interface WordPressPostData {
+  title: string;
+  imageUrl: string | null;
+  imageAlt: string;
+  companyName: string;
+  error?: string;
+  type?: 'post' | 'job-listing' | 'job_listing';
+  meta?: {
+    _company_name?: string;
+  };
+}
+
 export async function fetchWordPressPost(url: string): Promise<WordPressPostData> {
   try {
-    const postId = url.split('?p=')[1];
-    console.log(`Fetching post with URL: ${url}, Extracted postId: ${postId}`);
+    console.log('Attempting to fetch WordPress post for URL:', url);
+    
+    // Extrair o ID da URL de forma mais flexível
+    const postIdMatch = url.match(/[?&]p=(\d+)/) || url.match(/\/(\d+)\/?$/);
+    const postId = postIdMatch ? postIdMatch[1] : null;
 
     if (!postId) {
-      console.warn('Invalid URL: Could not extract post ID');
+      console.warn('Could not extract post ID from URL:', url);
       return {
-        title: `Post ${postId || 'Unknown'}`,
-        error: 'Could not extract post ID from URL'
+        title: `Post from ${url}`,
+        imageUrl: null,
+        imageAlt: '',
+        companyName: 'Desconhecido',
+        error: 'Could not extract post ID',
+        type: 'post',
+        meta: {}
       };
     }
 
-    // Try job listing endpoint first
-    let response = await fetchFromEndpoint(`${ENDPOINTS.JOB_LISTING(postId)}?_fields=title,featured_media,type,meta&_embed`);
-    console.log(`Job Listing Endpoint Response Status: ${response.status}`);
-    
-    // If not found, try regular post endpoint
-    if (response.status === 404) {
-      response = await fetchFromEndpoint(`${ENDPOINTS.POST(postId)}?_fields=title,featured_media,type,meta&_embed`);
-      console.log(`Post Endpoint Response Status: ${response.status}`);
+    // Tentar múltiplos endpoints
+    const endpoints = [
+      `https://maisvagases.com.br/wp-json/wp/v2/job-listings/${postId}?_embed`,
+      `https://maisvagases.com.br/wp-json/wp/v2/posts/${postId}?_embed`
+    ];
+
+    for (const endpoint of endpoints) {
+      try {
+        console.log(`Trying endpoint: ${endpoint}`);
+        const response = await fetch(endpoint, {
+          next: { revalidate: 3600 }, // cache por 1 hora
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (compatible; JobPostManager/1.0)',
+            'Accept': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const featuredMedia = data._embedded?.['wp:featuredmedia']?.[0];
+          
+          console.log('Successful fetch:', {
+            title: data.title?.rendered,
+            featuredMedia: !!featuredMedia
+          });
+
+          return {
+            title: data.title?.rendered 
+              ? sanitizeWordPressContent(data.title.rendered) 
+              : `Post ${postId}`,
+            imageUrl: featuredMedia?.source_url || null,
+            imageAlt: featuredMedia?.alt_text || '',
+            companyName: data.meta?._company_name || 'Desconhecido',
+            error: '',
+            type: response.url.includes('job-listings') ? 'job-listing' : 'post',
+            meta: data.meta || {}
+          };
+        }
+      } catch (endpointError) {
+        console.warn(`Error with endpoint ${endpoint}:`, endpointError);
+      }
     }
 
-    if (!response.ok) {
-      console.warn(`Failed to fetch post: ${response.statusText}`);
-      return {
-        title: `Post ${postId}`,
-        error: `Failed to fetch post: ${response.statusText}`,
-        type: undefined
-      };
-    }
-
-    const data: WordPressPost = await response.json();
-    console.log('WordPress Post Data:', JSON.stringify(data, null, 2));
-
-    // Tenta extrair o nome da empresa de diferentes fontes
-const companyName = 
-data.meta?._company_name || 
-data._embedded?.['wp:term']?.find(term => term.taxonomy === 'companies')?.name;
-
-console.log('Extracted Company Name:', companyName);
-
-    let media = null;
-    if (data.featured_media) {
-      media = await fetchMedia(data.featured_media);
-    }
-    
-    const title = data.title?.rendered 
-      ? sanitizeWordPressContent(data.title.rendered) 
-      : `Post ${postId}`;
-
-      return {
-        title,
-        imageUrl: media?.source_url,
-        imageAlt: media?.alt_text,
-        type: response.url.includes('job-listings') ? 'job-listing' : 'post',
-        companyName, // Adicionar o nome da empresa ao retorno
-        meta: data.meta // Preservar os metadados originais
-      };
-  } catch (error) {
-    console.error(`Error fetching WordPress title for ${url}:`, error);
+    // Se nenhum endpoint funcionar
+    console.error(`Failed to fetch post for URL: ${url}`);
     return {
-      title: error instanceof HTTPError 
-        ? `Error: ${error.message}` 
-        : `Error loading post ${url.split('?p=')[1] || 'Unknown'}`,
-      error: error instanceof Error ? error.message : 'Unknown error occurred'
+      title: `Post ${postId}`,
+      imageUrl: null,
+      imageAlt: '',
+      companyName: 'Desconhecido',
+      error: 'Could not fetch post from any endpoint',
+      type: 'post',
+      meta: {}
+    };
+  } catch (error) {
+    console.error(`Comprehensive error fetching WordPress post for ${url}:`, error);
+    return {
+      title: `Error Post`,
+      imageUrl: null,
+      imageAlt: '',
+      companyName: 'Erro',
+      error: error instanceof Error ? error.message : 'Unknown error',
+      type: 'post',
+      meta: {}
     };
   }
 }

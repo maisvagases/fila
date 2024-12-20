@@ -70,13 +70,26 @@ export function JobsTable({ initialPosts, totalPosts }: JobsTableProps) {
       setIsLoading(true);
       setError(null);
 
+      // Buscar todos os posts de uma vez com um pageSize maior
       const response = await fetch('/api/posts?page=1&pageSize=1000');
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
+      console.log('Fetched all posts:', {
+        totalPosts: data.posts.length,
+        total: data.total
+      });
+
       setAllPosts(data.posts);
+      setPagination(prev => ({
+        ...prev,
+        total: data.total,
+        totalPages: Math.ceil(data.total / prev.pageSize)
+      }));
+      
+      // Aplicar filtros e paginação inicial
       applyFiltersAndPagination(data.posts);
     } catch (error) {
       console.error('Error fetching posts:', error);
@@ -87,7 +100,7 @@ export function JobsTable({ initialPosts, totalPosts }: JobsTableProps) {
   };
 
   const applyFiltersAndPagination = (posts: JobPostDTO[]) => {
-    // Apply filters
+    // Aplicar filtros
     const filtered = posts.filter(post => {
       const matchesTitle = post.title.toLowerCase().includes(filters.title.toLowerCase());
       const matchesUrl = post.url.toLowerCase().includes(filters.url.toLowerCase());
@@ -111,18 +124,21 @@ export function JobsTable({ initialPosts, totalPosts }: JobsTableProps) {
       return matchesTitle && matchesUrl && matchesDateRange && matchesCompany;
     });
 
-    // Apply pagination
+    // Calcular paginação
     const total = filtered.length;
     const totalPages = Math.ceil(total / pagination.pageSize);
     const start = (pagination.currentPage - 1) * pagination.pageSize;
     const end = start + pagination.pageSize;
 
-    setPosts(filtered.slice(start, end));
+    // Atualizar estado
     setPagination(prev => ({
       ...prev,
       total,
       totalPages
     }));
+
+    // Definir posts paginados
+    setPosts(filtered.slice(start, end));
   };
 
   // Effect for initial data fetch
@@ -130,19 +146,20 @@ export function JobsTable({ initialPosts, totalPosts }: JobsTableProps) {
     fetchPosts();
   }, []);
 
-  const setPageSize = (size: number) => {
-    setPagination(prev => ({
-      ...prev,
-      pageSize: size,
-      currentPage: 1,
-      totalPages: Math.ceil(prev.total / size)
-    }));
-  };
-
   const setCurrentPage = (page: number) => {
+    console.log('Changing page:', page);
     setPagination(prev => ({
       ...prev,
       currentPage: page
+    }));
+  };
+
+  const setPageSize = (size: number) => {
+    console.log('Changing page size:', size);
+    setPagination(prev => ({
+      ...prev,
+      pageSize: size,
+      currentPage: 1  // Resetar para primeira página ao mudar tamanho
     }));
   };
 

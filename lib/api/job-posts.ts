@@ -105,11 +105,47 @@ async function enrichPostsWithWordPressData(posts: JobPost[]): Promise<JobPostDT
 
 export async function getPaginatedJobPosts(page: number, pageSize: number) {
   try {
+    console.log('getPaginatedJobPosts - Input:', { page, pageSize });
+    console.log('getPaginatedJobPosts - Detailed Input:', { 
+      page, 
+      pageSize, 
+      startIndex: (page - 1) * pageSize,
+      endIndex: (page - 1) * pageSize + pageSize
+    });
     const allPosts = await getEnrichedJobPosts();
+    console.log('getPaginatedJobPosts - All Posts:', {
+      total: allPosts.length,
+      firstPost: allPosts[0],
+      lastPost: allPosts[allPosts.length - 1]
+    });
+    console.log('getPaginatedJobPosts - All Posts Details:', {
+      total: allPosts.length,
+      firstPostId: allPosts[0]?.id,
+      lastPostId: allPosts[allPosts.length - 1]?.id,
+      firstPostTitle: allPosts[0]?.title,
+      lastPostTitle: allPosts[allPosts.length - 1]?.title
+    });
+    console.log('getPaginatedJobPosts - Pagination Details:', {
+      startIndex: (page - 1) * pageSize,
+      endIndex: (page - 1) * pageSize + pageSize,
+      totalPages: Math.ceil(allPosts.length / pageSize)
+    });
     
     const startIndex = (page - 1) * pageSize;
     const endIndex = startIndex + pageSize;
-    const paginatedPosts = allPosts.slice(startIndex, endIndex).filter(post => post !== null);
+    const paginatedPosts = allPosts.slice(startIndex, endIndex).filter(post => {
+      const isValid = post !== null && post !== undefined;
+      if (!isValid) {
+        console.warn('Invalid post filtered out:', post);
+      }
+      return isValid;
+    });
+
+    console.log('getPaginatedJobPosts - Pagination Result:', {
+      paginatedPostsCount: paginatedPosts.length,
+      paginatedPostsTitles: paginatedPosts.map(p => p.title),
+      totalPages: Math.ceil(allPosts.length / pageSize)
+    });
 
     return {
       posts: paginatedPosts as JobPostDTO[],

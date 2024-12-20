@@ -7,16 +7,27 @@ export async function GET(request: NextRequest) {
     const page = Math.max(1, Number(searchParams.get('page')) || 1);
     const pageSize = Math.max(1, Number(searchParams.get('pageSize')) || 10);
 
-    console.log(`API Route - Fetching page ${page} with size ${pageSize}`);
+    console.log('API Route - Detailed Request:', {
+      fullUrl: request.url,
+      searchParamsString: request.nextUrl.search,
+      page,
+      pageSize
+    });
 
     const result = await getPaginatedJobPosts(page, pageSize);
     
+    console.log('API Route - Detailed Result:', {
+      postsCount: result.posts.length,
+      total: result.total,
+      page: result.page,
+      pageSize: result.pageSize,
+      totalPages: result.totalPages
+    });
+
     if (!result || !Array.isArray(result.posts)) {
       console.error('Invalid result structure:', result);
       throw new Error('Invalid data structure returned from getPaginatedJobPosts');
     }
-
-    console.log(`API Route - Found ${result.posts.length} posts out of ${result.total}`);
 
     // Garantir que as datas são strings ISO
     const serializedPosts = result.posts.map(post => ({
@@ -29,13 +40,22 @@ export async function GET(request: NextRequest) {
         : new Date(post.finishedTime).toISOString()
     }));
 
-    return Response.json({
-      posts: serializedPosts,
-      total: result.total,
-      page: result.page,
-      pageSize: result.pageSize,
-      totalPages: result.totalPages
-    });
+    return new Response(
+      JSON.stringify({
+        posts: serializedPosts,
+        total: result.total,
+        page: result.page,
+        pageSize: result.pageSize,
+        totalPages: result.totalPages
+      }),
+      { 
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store, max-age=0'
+        }
+      }
+    );
   } catch (error) {
     console.error('Error in API route:', error);
     
