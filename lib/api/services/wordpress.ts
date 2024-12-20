@@ -89,7 +89,7 @@ export async function fetchWordPressPost(url: string): Promise<WordPressPostData
         error: 'Could not extract post ID from URL',
         type: 'post',
         meta: {}
-      };
+      } as WordPressPostData;
     }
 
     // Tentar múltiplos endpoints
@@ -145,7 +145,7 @@ export async function fetchWordPressPost(url: string): Promise<WordPressPostData
       error: 'Could not fetch post from any endpoint',
       type: 'post',
       meta: {}
-    };
+    } as WordPressPostData;
   } catch (error) {
     console.error(`Comprehensive error fetching WordPress post for ${url}:`, error);
     return {
@@ -156,6 +156,6 @@ export async function fetchWordPressPost(url: string): Promise<WordPressPostData
       error: error instanceof Error ? error.message : 'Unknown error',
       type: 'post',
       meta: {}
-    };
+    } as WordPressPostData;
   }
 }

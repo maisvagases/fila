@@ -70,10 +70,19 @@ export function JobsTable({ initialPosts, totalPosts }: JobsTableProps) {
       setIsLoading(true);
       setError(null);
 
-      // Buscar todos os posts de uma vez com um pageSize maior
-      const response = await fetch('/api/posts?page=1&pageSize=1000');
+      // Usar URL absoluta para evitar problemas de ambiente
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL 
+        ? `${process.env.NEXT_PUBLIC_API_URL}/api/posts` 
+        : '/api/posts';
+
+      const response = await fetch(`${apiUrl}?page=1&pageSize=1000`);
+      
+      console.log('Fetch URL:', `${apiUrl}?page=1&pageSize=1000`);
+      
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error('Full error response:', errorText);
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
       }
 
       const data = await response.json();
