@@ -80,13 +80,13 @@ export async function fetchWordPressPost(url: string): Promise<WordPressPostData
     const postId = postIdMatch ? postIdMatch[1] : null;
 
     if (!postId) {
-      console.warn('Could not extract post ID from URL:', url);
+      console.warn('Invalid URL: Could not extract post ID');
       return {
-        title: `Post from ${url}`,
+        title: `Post ${postId || 'Unknown'}`,
         imageUrl: null,
         imageAlt: '',
         companyName: 'Desconhecido',
-        error: 'Could not extract post ID',
+        error: 'Could not extract post ID from URL',
         type: 'post',
         meta: {}
       };
